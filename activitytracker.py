@@ -41,7 +41,6 @@ class mainWindow(QMainWindow):
         self._createMenu()
         self._createItemsBox()
         self.DisplayItems()
-        self.itemsBox.setCurrentRow(0)
         self._createFieldsBox()
         self._createPlotBox()
     
@@ -71,10 +70,10 @@ class mainWindow(QMainWindow):
         fieldFormScroll = QScrollArea(self)
         fieldFormScrollContents = QWidget()
         self.fieldForm = QGridLayout(fieldFormScrollContents)
-        currentItem = self.itemsBox.currentItem()
-        if currentItem is not None:
-            editBoxes = {field['label']: QLineEdit() for field in items[currentItem.text()]}
-            for row, field in enumerate(items[currentItem.text()]):
+        self.currentItem = self.itemsBox.currentItem()
+        if self.currentItem is not None:
+            editBoxes = {field['label']: QLineEdit() for field in items[self.currentItem.text()]}
+            for row, field in enumerate(items[self.currentItem.text()]):
                 editBoxes[field['label']].setText(str(field['value']))
                 self.fieldForm.addWidget(QLabel(field['label']),row,0)
                 self.fieldForm.addWidget(editBoxes[field['label']],row,1)
@@ -113,8 +112,14 @@ class mainWindow(QMainWindow):
         self.generalLayout.addLayout(plotLayout)
     
     def DisplayItems(self):
+        self.itemsBox.clear()
         for key in items.keys():
             self.itemsBox.addItem(key)
+        self.itemsBox.setCurrentRow(0)
+    
+    def _addActivity(self):
+        self.activityDialogue = ActivityDialogue(self)
+        self.activityDialogue.show()
     
     def _new(self):
         return
@@ -155,20 +160,53 @@ class HelpWindow(QWidget):
         with open('helptext.txt','r') as f:
             lines = f.readlines()
         return lines
-        
 
-# class controller:
-#     '''Controller module'''
-#     def __init__(self,model,view):
-#         self._evaluate = model
-#         self._view = view
-#         self._connectSignalsAndSlots
+class ActivityDialogue(QWidget):
+    '''Add new Activity type'''
+    def __init__(self,parent):
+        super().__init__()
+        self.parent = parent
+        layout = QVBoxLayout()
+        entryFieldLayout = QHBoxLayout()
+        entryFieldLayout.addWidget(QLabel('Name:'))
+        self.textBox = QLineEdit()
+        entryFieldLayout.addWidget(self.textBox)
+        layout.addLayout(entryFieldLayout)
+        buttons = QHBoxLayout()
+        self.acceptButton = QPushButton('OK')
+        buttons.addWidget(self.acceptButton)
+        self.cancelButton = QPushButton('Cancel')
+        buttons.addWidget(self.cancelButton)
+        layout.addLayout(buttons)
+        self.setLayout(layout)
+        self.acceptButton.clicked.connect(self._accept)
+        self.cancelButton.clicked.connect(self.close)
+    
+    def _accept(self):
+        qText = self.textBox.text()
+        if not(qText in items.keys() or len(qText)):
+            return
+        else:
+            items.update({qText: []})
+            self.parent.DisplayItems()
+            self.close()
+
+class controller:
+    '''Controller module'''
+    def __init__(self,model,view):
+        self._evaluate = model
+        self._view = view
+        self._connectSignalsAndSlots()
+    
+    def _connectSignalsAndSlots(self):
+        self._view.activityButton.clicked.connect(self._view._addActivity)
 
 def main():
     '''Main loop'''
     elApp = QApplication([])
     elWindow = mainWindow()
     elWindow.show()
+    controller(model=None,view=elWindow)
     sys.exit(elApp.exec())
 
 if (__name__=='__main__'):

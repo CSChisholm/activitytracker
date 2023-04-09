@@ -40,9 +40,9 @@ class mainWindow(QMainWindow):
         self.setCentralWidget(centralWidget)
         self._createMenu()
         self._createItemsBox()
-        self.DisplayItems()
+        self.displayItems()
         self._createFieldsBox()
-        self.DisplayFields()
+        self.displayFields()
         self._createPlotBox()
     
     def _createMenu(self):
@@ -101,13 +101,13 @@ class mainWindow(QMainWindow):
         plotLayout.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self.generalLayout.addLayout(plotLayout)
     
-    def DisplayItems(self):
+    def displayItems(self):
         self.itemsBox.clear()
         for key in items.keys():
             self.itemsBox.addItem(key)
         self.itemsBox.setCurrentRow(0)
     
-    def DisplayFields(self):
+    def displayFields(self):
         fieldFormScrollContents = QWidget()
         self.fieldForm = QGridLayout(fieldFormScrollContents)
         self.currentItem = self.itemsBox.currentItem()
@@ -121,11 +121,11 @@ class mainWindow(QMainWindow):
         self.fieldFormScroll.setWidget(fieldFormScrollContents)
     
     def _addActivity(self):
-        self.activityDialogue = ActivityDialogue(self)
+        self.activityDialogue = activityDialogue(self)
         self.activityDialogue.show()
     
     def _addField(self):
-        self.fieldDialogue = FieldDialogue(self)
+        self.fieldDialogue = fieldDialogue(self)
         self.fieldDialogue.show()
     
     def _new(self):
@@ -141,14 +141,14 @@ class mainWindow(QMainWindow):
         return
     
     def _helpPopUp(self):
-        self.hWindow = HelpWindow()
+        self.hWindow = helpWindow()
         self.hWindow.show()
     
     def closeEvent(self, event):
         QApplication.closeAllWindows()
         event.accept()
 
-class HelpWindow(QWidget):
+class helpWindow(QWidget):
     '''General information called by Help menu'''
     def __init__(self):
         super().__init__()
@@ -168,7 +168,7 @@ class HelpWindow(QWidget):
             lines = f.readlines()
         return lines
 
-class ActivityDialogue(QWidget):
+class activityDialogue(QWidget):
     '''Add new Activity type'''
     def __init__(self,parent):
         super().__init__()
@@ -195,10 +195,10 @@ class ActivityDialogue(QWidget):
             return
         else:
             items.update({qText: []})
-            self.parent.DisplayItems()
+            self.parent.displayItems()
             self.close()
 
-class FieldDialogue(QWidget):
+class fieldDialogue(QWidget):
     '''Add fields to activity'''
     def __init__(self,parent):
         super().__init__()
@@ -232,7 +232,7 @@ class FieldDialogue(QWidget):
         itemKey = self.parent.currentItem.text()
         try:
             items[itemKey].append(itemField(labelText,float(valueText),unitText))
-            self.parent.DisplayFields()
+            self.parent.displayFields()
         except Exception:
             pass
         self.close()
@@ -246,7 +246,7 @@ class controller:
     
     def _connectSignalsAndSlots(self):
         self._view.activityButton.clicked.connect(self._view._addActivity)
-        self._view.itemsBox.currentItemChanged.connect(self._view.DisplayFields)
+        self._view.itemsBox.currentItemChanged.connect(self._view.displayFields)
         self._view.fieldButton.clicked.connect(self._view._addField)
 
 def main():

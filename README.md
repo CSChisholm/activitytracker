@@ -1,6 +1,6 @@
 # Activity Tracker
 
-Local only, manual entry exercise logging program
+Local only, manual entry activity logging program
 
 # Development
 Set up virtual environment:

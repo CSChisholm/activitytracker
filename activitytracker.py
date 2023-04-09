@@ -16,6 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import sys
+from functools import partial
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox
 from pyqtgraph import PlotWidget, plot, mkPen
@@ -110,15 +111,22 @@ class mainWindow(QMainWindow):
     def displayFields(self):
         fieldFormScrollContents = QWidget()
         self.fieldForm = QGridLayout(fieldFormScrollContents)
-        self.currentItem = self.itemsBox.currentItem()
-        if self.currentItem is not None:
-            editBoxes = {field['label']: QLineEdit() for field in items[self.currentItem.text()]}
-            for row, field in enumerate(items[self.currentItem.text()]):
-                editBoxes[field['label']].setText(str(field['value']))
+        currentItem = self.itemsBox.currentItem()
+        if currentItem is not None:
+            self.editBoxes = {field['label']: QLineEdit() for field in items[currentItem.text()]}
+            for row, field in enumerate(items[currentItem.text()]):
+                self.editBoxes[field['label']].setText(str(field['value']))
                 self.fieldForm.addWidget(QLabel(field['label']),row,0)
-                self.fieldForm.addWidget(editBoxes[field['label']],row,1)
+                self.fieldForm.addWidget(self.editBoxes[field['label']],row,1)
                 self.fieldForm.addWidget(QLabel(field['unit']),row,2)
         self.fieldFormScroll.setWidget(fieldFormScrollContents)
+    
+    def updateField(self,key,index):
+        print(self.itemsBox.currentItem().text())
+        items[self.itemsBox.currentItem().text()][index]['value'] = float(self.editBoxes[key].text())
+        self.editBoxes = {field['label']: QLineEdit() for field in items[self.itemsBox.currentItem().text()]}
+        for row, field in enumerate(items[self.itemsBox.currentItem().text()]):
+            self.editBoxes[field['label']].setText(str(field['value']))
     
     def _addActivity(self):
         self.activityDialogue = activityDialogue(self)
@@ -229,7 +237,7 @@ class fieldDialogue(QWidget):
         labelText = self.labelBox.text()
         valueText = self.valueBox.text()
         unitText = self.unitBox.text()
-        itemKey = self.parent.currentItem.text()
+        itemKey = self.parent.itemsBox.currentItem().text()
         try:
             items[itemKey].append(itemField(labelText,float(valueText),unitText))
             self.parent.displayFields()
@@ -245,6 +253,8 @@ class controller:
         self._connectSignalsAndSlots()
     
     def _connectSignalsAndSlots(self):
+        for itr, key in enumerate(self._view.editBoxes.keys()):
+            self._view.editBoxes[key].textChanged.connect(partial(self._view.updateField,key,itr))
         self._view.activityButton.clicked.connect(self._view._addActivity)
         self._view.itemsBox.currentItemChanged.connect(self._view.displayFields)
         self._view.fieldButton.clicked.connect(self._view._addField)

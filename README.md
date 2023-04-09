@@ -2,6 +2,16 @@
 
 Local only, manual entry activity logging program
 
+# To do
+* Detect when selected item has changed and update fields
+* Enable adding new fields
+* Load and save data (format: JSON? HDF5?)
+* Detect unsaved changes before closing or loading new file
+* Select different days
+* Add radio button to plot selected field in avaliable time ranges
+* Produce stand alone excutables for different operating systems (This feature will correspond to first release)
+* Enable custom time range for plotting
+
 # Development
 Set up virtual environment:
 

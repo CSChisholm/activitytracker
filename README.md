@@ -3,8 +3,6 @@
 Local only, manual entry activity logging program
 
 # To do
-* Detect when selected item has changed and update fields
-* Enable adding new fields
 * Load and save data (format: JSON? HDF5?)
 * Detect unsaved changes before closing or loading new file
 * Select different days

@@ -6,13 +6,13 @@ Data is saved as text in `.json` format.
 
 # To do
 * Produce stand alone excutables for different operating systems (This feature will correspond to first release).
-* Enable plotting multiple fields simultaneously (inlcuding multiple fields across multiple items).
+* Enable plotting multiple fields simultaneously (including multiple fields across multiple items).
 
 # Usage
 
 From command line: `python3 activitytracker.py`
 
-The user will be presented with a blank interface, to get start added an item by clicking `Add item`, the item name can be any nonempty string. The fields for each item are shown by clicking on the item name. Each item can contain a number of fields which are create by clicking `Add field`. Fields have three components, the name which can be any nonempty string, the value which can be any numeric value, and the unit which can be any string (including empty). Once a field is created it cannot be deleted and the only part which can be edited is the value. To commit changes to values, click `Update fields` otherwise the changes will be reverted if the view is changed.
+The user will be presented with a blank interface, to get start added an item by clicking `Add item`, the item name can be any nonempty string. The fields for each item are shown by clicking on the item name. Each item can contain a number of fields which are created by clicking `Add field`. Fields have three components, the name which can be any nonempty string, the value which can be any numeric value, and the unit which can be any string (including empty). Once a field is created it cannot be deleted and the only part which can be edited is the value. To commit changes to values, click `Update fields` otherwise the changes will be reverted if the view is changed.
 
 The viewed day can be changed using the calendar at the top left, when opening a file or starting a new project, the view is set to the current day according to the system. When a new field is added to an item, it will only be added on the current day. When a day which has never been used is selected, it is populated with all of the items and fields (initialised to zero) of the most recent nonfuture day which has entries.
 

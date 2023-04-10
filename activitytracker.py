@@ -237,6 +237,8 @@ class mainWindow(QMainWindow):
             fileName = QFileDialog.getOpenFileName(self,'',self.currentDirectory)[0]
             if not fileName=='':
                 try:
+                    self.cal0.setSelectedDate(QDate.currentDate())
+                    self.currentDay = str(self.cal0.selectedDate().toJulianDay())
                     self.items = loadFile(fileName)
                     if not self.currentDay in self.items.keys():
                         self.items[self.currentDay] = self._copyDay()

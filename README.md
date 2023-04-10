@@ -5,13 +5,17 @@ Local only, manual entry activity logging program. The puprose of this program i
 Data is saved as text in `.json` format.
 
 # To do
-* Detect unsaved changes before closing or loading new file
 * Select different days
-* Add radio button to plot selected field in avaliable time ranges
 * Produce stand alone excutables for different operating systems (This feature will correspond to first release)
 * Enable custom time range for plotting
+* Write usage documentation
+
+# Usage
 
 # Development
+Clone repository:
+`git clone https://github.com/CSChisholm/activitytracker`
+
 Set up virtual environment:
 
 ## Linux + macOS

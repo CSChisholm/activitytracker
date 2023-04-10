@@ -72,8 +72,8 @@ class mainWindow(QMainWindow):
         self._createItemsBox()
         self._displayItems()
         self._createFieldsBox()
-        self._displayFields()
         self._createPlotBox()
+        self._displayFields()
     
     def _createMenu(self):
         menu = self.menuBar().addMenu('&Menu')
@@ -126,6 +126,9 @@ class mainWindow(QMainWindow):
         self.plotRange = QComboBox()
         plotControlWidget.addWidget(self.plotRange)
         self.plotRange.addItems(['Last 7 days', 'Last 30 days', 'All time'])
+        plotControlWidget.addWidget(QLabel('Field:'))
+        self.plotField = QComboBox()
+        plotControlWidget.addWidget(self.plotField)
         self.plotButton = QPushButton('Plot')
         plotControlWidget.addWidget(self.plotButton)
         self.savePlotButton = QPushButton('Save Plot')
@@ -153,6 +156,8 @@ class mainWindow(QMainWindow):
                 self.fieldForm.addWidget(self.editBoxes[key],row,1)
                 self.fieldForm.addWidget(QLabel(self.items[currentItem.text()][key]['unit']),row,2)
         self.fieldFormScroll.setWidget(fieldFormScrollContents)
+        self.plotField.clear()
+        self.plotField.addItems(list(self.editBoxes.keys()))
     
     def _addActivity(self):
         self.activityDialogue = activityDialogue(self)

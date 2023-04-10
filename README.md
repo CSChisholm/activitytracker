@@ -19,7 +19,7 @@ The viewed day can be changed using the calendar at the top left, when opening a
 On the right, a field of the currently selected item can be slected for plotting from a drop down menu at the bottom. The time range for the plot is also set by a drop down menu. For the `Custom` date range, the two calendars at the top set the start and end dates (there is probably a more elegant way to do this). If two items have fields with matching names, only the field corresponding to the currently selected item is shown.
 
 # Development
-This project was hacked together in one weekend for personal use and to learn `PyQt5` and will probably not be devloped much (see to do list above) but contributions are welcome.
+This project was hacked together in one weekend for personal use and to learn `PyQt5` and will probably not be developed much (see to do list above) but contributions are welcome.
 
 Clone repository:
 `git clone https://github.com/CSChisholm/activitytracker`
@@ -44,7 +44,7 @@ python3 -m pip install -r requirements.txt
 
 Copyright © 2023 Craig S. Chisholm
 
-Version - 0.0.0
+Version - 0.1.0
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

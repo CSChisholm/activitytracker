@@ -22,7 +22,7 @@ import datetime
 import copy
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QCalendarWidget
-from pyqtgraph import PlotWidget, plot, mkPen
+from pyqtgraph import PlotWidget, exporters, mkPen
 
 def getVersion():
     with open('helptext.txt','r') as f:
@@ -113,6 +113,7 @@ class mainWindow(QMainWindow):
         fieldsLayout.addLayout(fieldButtons)
         fieldsLayout.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self.generalLayout.addLayout(fieldsLayout)
+        self.editBoxes = {}
     
     def _createPlotBox(self):
         plotLayout = QVBoxLayout()
@@ -192,7 +193,13 @@ class mainWindow(QMainWindow):
         self.plotWidget.plot(plotX,plotY,pen=self.plotPen)
         self.plotWidget.setLabel('bottom', 'Day', **self.plotLabelStyle)
         self.plotWidget.setLabel('left', f'{self.plotField.currentText()} ({self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})', **self.plotLabelStyle)
-        
+    
+    def _exportPlot(self):
+        imName = QFileDialog.getSaveFileName(self,'',self.currentDirectory)[0]
+        if imName[-4:]!='.png':
+            imName+='.png'
+        exporter = exporters.ImageExporter(self.plotWidget.scene())
+        exporter.export(imName)
     
     def _addActivity(self):
         self.activityDialogue = activityDialogue(self)
@@ -229,8 +236,7 @@ class mainWindow(QMainWindow):
         return newDay
     
     def _new(self):
-        self.items = {self.currentDay: {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}}
-        # self.items = {self.currentDay: {}}
+        self.items = {self.currentDay: {}}
         self.itemsLoad = copy.deepcopy(self.items)
         try:
             self._displayItems()
@@ -454,6 +460,7 @@ class controller:
         self._view.updateButton.clicked.connect(self._view._updateFields)
         self._view.cal0.selectionChanged.connect(self._view._changeDay)
         self._view.plotButton.clicked.connect(self._view._generatePlot)
+        self._view.savePlotButton.clicked.connect(self._view._exportPlot)
 
 def main():
     '''Main loop'''

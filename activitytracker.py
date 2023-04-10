@@ -22,13 +22,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPush
 from pyqtgraph import PlotWidget, plot, mkPen
 
 ITEMS_HEIGHT = 640
-ITEMS_WIDTH = 300
-PLOT_WIDTH = 1200
+ITEMS_WIDTH = 150
+FIELDS_WIDTH = 300
+PLOT_WIDTH = 600
 
 def itemField(label,value,unit):
-    return {'label': label, 'value': value, 'unit': unit}
+    return {label: {'value': value, 'unit': unit}}
 
-items = {'test1': [itemField('testObject1',373,'potatoes'), itemField('testObject2',413,'kg')], 'test2': [itemField('testObject1',118,'potatoes')]}
+items = {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}
 
 class mainWindow(QMainWindow):
     '''Main window'''
@@ -41,9 +42,9 @@ class mainWindow(QMainWindow):
         self.setCentralWidget(centralWidget)
         self._createMenu()
         self._createItemsBox()
-        self.displayItems()
+        self._displayItems()
         self._createFieldsBox()
-        self.displayFields()
+        self._displayFields()
         self._createPlotBox()
     
     def _createMenu(self):
@@ -71,11 +72,15 @@ class mainWindow(QMainWindow):
         fieldsLayout = QVBoxLayout()
         self.fieldFormScroll = QScrollArea(self)
         self.fieldFormScroll.setFixedHeight(ITEMS_HEIGHT)
-        self.fieldFormScroll.setFixedWidth(ITEMS_WIDTH)
+        self.fieldFormScroll.setFixedWidth(FIELDS_WIDTH)
         self.fieldFormScroll.setAlignment(Qt.AlignmentFlag.AlignLeft)
         fieldsLayout.addWidget(self.fieldFormScroll)
+        fieldButtons = QHBoxLayout()
         self.fieldButton = QPushButton('Add field')
-        fieldsLayout.addWidget(self.fieldButton)
+        fieldButtons.addWidget(self.fieldButton)
+        self.updateButton = QPushButton('Update fields')
+        fieldButtons.addWidget(self.updateButton)
+        fieldsLayout.addLayout(fieldButtons)
         fieldsLayout.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self.generalLayout.addLayout(fieldsLayout)
     
@@ -102,31 +107,24 @@ class mainWindow(QMainWindow):
         plotLayout.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self.generalLayout.addLayout(plotLayout)
     
-    def displayItems(self):
+    def _displayItems(self):
         self.itemsBox.clear()
         for key in items.keys():
             self.itemsBox.addItem(key)
         self.itemsBox.setCurrentRow(0)
     
-    def displayFields(self):
+    def _displayFields(self):
         fieldFormScrollContents = QWidget()
         self.fieldForm = QGridLayout(fieldFormScrollContents)
         currentItem = self.itemsBox.currentItem()
         if currentItem is not None:
-            self.editBoxes = {field['label']: QLineEdit() for field in items[currentItem.text()]}
-            for row, field in enumerate(items[currentItem.text()]):
-                self.editBoxes[field['label']].setText(str(field['value']))
-                self.fieldForm.addWidget(QLabel(field['label']),row,0)
-                self.fieldForm.addWidget(self.editBoxes[field['label']],row,1)
-                self.fieldForm.addWidget(QLabel(field['unit']),row,2)
+            self.editBoxes = {key: QLineEdit() for key in items[currentItem.text()].keys()}
+            for row, key in enumerate(items[currentItem.text()].keys()):
+                self.editBoxes[key].setText(str(items[currentItem.text()][key]['value']))
+                self.fieldForm.addWidget(QLabel(key),row,0)
+                self.fieldForm.addWidget(self.editBoxes[key],row,1)
+                self.fieldForm.addWidget(QLabel(items[currentItem.text()][key]['unit']),row,2)
         self.fieldFormScroll.setWidget(fieldFormScrollContents)
-    
-    def updateField(self,key,index):
-        print(self.itemsBox.currentItem().text())
-        items[self.itemsBox.currentItem().text()][index]['value'] = float(self.editBoxes[key].text())
-        self.editBoxes = {field['label']: QLineEdit() for field in items[self.itemsBox.currentItem().text()]}
-        for row, field in enumerate(items[self.itemsBox.currentItem().text()]):
-            self.editBoxes[field['label']].setText(str(field['value']))
     
     def _addActivity(self):
         self.activityDialogue = activityDialogue(self)
@@ -135,6 +133,11 @@ class mainWindow(QMainWindow):
     def _addField(self):
         self.fieldDialogue = fieldDialogue(self)
         self.fieldDialogue.show()
+    
+    def _updateFields(self):
+        currentItem = self.itemsBox.currentItem().text()
+        for key in self.editBoxes.keys():
+            items[currentItem][key]['value'] = float(self.editBoxes[key].text())
     
     def _new(self):
         return
@@ -199,11 +202,11 @@ class activityDialogue(QWidget):
     
     def _accept(self):
         qText = self.textBox.text()
-        if not(qText in items.keys() or len(qText)):
+        if (qText in items.keys() or not len(qText)):
             return
         else:
-            items.update({qText: []})
-            self.parent.displayItems()
+            items.update({qText: {}})
+            self.parent._displayItems()
             self.close()
 
 class fieldDialogue(QWidget):
@@ -238,12 +241,15 @@ class fieldDialogue(QWidget):
         valueText = self.valueBox.text()
         unitText = self.unitBox.text()
         itemKey = self.parent.itemsBox.currentItem().text()
-        try:
-            items[itemKey].append(itemField(labelText,float(valueText),unitText))
-            self.parent.displayFields()
-        except Exception:
-            pass
-        self.close()
+        if not labelText in items[itemKey].keys():
+            try:
+                items[itemKey].update(itemField(labelText,float(valueText),unitText))
+                self.parent._displayFields()
+            except Exception:
+                pass
+            self.close()
+        else:
+            return
 
 class controller:
     '''Controller module'''
@@ -253,11 +259,10 @@ class controller:
         self._connectSignalsAndSlots()
     
     def _connectSignalsAndSlots(self):
-        for itr, key in enumerate(self._view.editBoxes.keys()):
-            self._view.editBoxes[key].textChanged.connect(partial(self._view.updateField,key,itr))
         self._view.activityButton.clicked.connect(self._view._addActivity)
-        self._view.itemsBox.currentItemChanged.connect(self._view.displayFields)
+        self._view.itemsBox.currentItemChanged.connect(self._view._displayFields)
         self._view.fieldButton.clicked.connect(self._view._addField)
+        self._view.updateButton.clicked.connect(self._view._updateFields)
 
 def main():
     '''Main loop'''

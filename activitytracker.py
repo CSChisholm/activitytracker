@@ -21,7 +21,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox
 from pyqtgraph import PlotWidget, plot, mkPen
 
-ITEMS_HEIGHT = 640
+ITEMS_HEIGHT = 500
 ITEMS_WIDTH = 150
 FIELDS_WIDTH = 300
 PLOT_WIDTH = 600

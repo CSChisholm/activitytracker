@@ -20,7 +20,7 @@ import json
 import os
 import datetime
 import copy
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QCalendarWidget
 from pyqtgraph import PlotWidget, plot, mkPen
 
@@ -178,6 +178,23 @@ class mainWindow(QMainWindow):
         for key in self.editBoxes.keys():
             self.items[self.currentDay][currentItem][key]['value'] = float(self.editBoxes[key].text())
     
+    def _changeDay(self):
+        self.currentDay = str(self.cal0.selectedDate().toJulianDay())
+        if not self.currentDay in self.items.keys():
+            self.items[self.currentDay] = self._copyDay()
+        self._displayItems()
+        self._displayFields()
+    
+    def _copyDay(self):
+        today = QDate.currentDate().toJulianDay()
+        mostRecentDay = str(max([int(key) for key in self.items.keys() if int(key)<=today]))
+        newDay = {}
+        for itemKey in self.items[mostRecentDay].keys():
+            newDay.update({itemKey: {}})
+            for fieldKey in self.items[mostRecentDay][itemKey].keys():
+                newDay[itemKey].update(itemField(fieldKey,0,self.items[mostRecentDay][itemKey][fieldKey]['unit']))
+        return newDay
+    
     def _new(self):
         self.items = {self.currentDay: {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}}
         # self.items = {self.currentDay: {}}
@@ -221,6 +238,8 @@ class mainWindow(QMainWindow):
             if not fileName=='':
                 try:
                     self.items = loadFile(fileName)
+                    if not self.currentDay in self.items.keys():
+                        self.items[self.currentDay] = self._copyDay()
                     self.itemsLoad = copy.deepcopy(self.items)
                     self._displayItems()
                     self._displayFields()
@@ -337,10 +356,10 @@ class activityDialogue(QDialog):
     
     def _accept(self):
         qText = self.textBox.text()
-        if (qText in self.parent.items[self.currentDay].keys() or not len(qText)):
+        if (qText in self.parent.items[self.parent.currentDay].keys() or not len(qText)):
             return
         else:
-            self.parent.items[self.currentDay].update({qText: {}})
+            self.parent.items[self.parent.currentDay].update({qText: {}})
             self.parent._displayItems()
             self.close()
 
@@ -376,9 +395,9 @@ class fieldDialogue(QDialog):
         valueText = self.valueBox.text()
         unitText = self.unitBox.text()
         itemKey = self.parent.itemsBox.currentItem().text()
-        if not labelText in self.parent.items[self.currentDay][itemKey].keys():
+        if not labelText in self.parent.items[self.parent.currentDay][itemKey].keys():
             try:
-                self.parent.items[self.currentDay][itemKey].update(itemField(labelText,float(valueText),unitText))
+                self.parent.items[self.parent.currentDay][itemKey].update(itemField(labelText,float(valueText),unitText))
                 self.parent._displayFields()
             except Exception:
                 pass
@@ -398,6 +417,7 @@ class controller:
         self._view.itemsBox.currentItemChanged.connect(self._view._displayFields)
         self._view.fieldButton.clicked.connect(self._view._addField)
         self._view.updateButton.clicked.connect(self._view._updateFields)
+        self._view.cal0.selectionChanged.connect(self._view._changeDay)
 
 def main():
     '''Main loop'''

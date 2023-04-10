@@ -5,7 +5,7 @@ Local only, manual entry activity logging program. The puprose of this program i
 Data is saved as text in `.json` format.
 
 # To do
-* Select different days
+* Plot data
 * Produce stand alone excutables for different operating systems (This feature will correspond to first release)
 * Enable custom time range for plotting
 * Write usage documentation

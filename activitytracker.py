@@ -116,8 +116,12 @@ class mainWindow(QMainWindow):
     
     def _createPlotBox(self):
         plotLayout = QVBoxLayout()
-        self.PlotTitle = QLabel('')
-        plotLayout.addWidget(self.PlotTitle)
+        calLayout = QHBoxLayout()
+        self.cal1 = QCalendarWidget()
+        self.cal2 = QCalendarWidget()
+        calLayout.addWidget(self.cal1)
+        calLayout.addWidget(self.cal2)
+        plotLayout.addLayout(calLayout)
         self.plotWidget = PlotWidget()
         self.plotWidget.setBackground('w')
         self.plotPen = mkPen(color=(0,0,0),width=3)
@@ -128,7 +132,7 @@ class mainWindow(QMainWindow):
         plotControlWidget.addWidget(QLabel('Plot Range:'))
         self.plotRange = QComboBox()
         plotControlWidget.addWidget(self.plotRange)
-        self.plotRange.addItems(['Last 7 days', 'Last 30 days', 'All time'])
+        self.plotRange.addItems(['Last 7 days', 'Last 30 days', 'All time', 'Custom'])
         plotControlWidget.addWidget(QLabel('Field:'))
         self.plotField = QComboBox()
         plotControlWidget.addWidget(self.plotField)
@@ -173,6 +177,9 @@ class mainWindow(QMainWindow):
                 startDay = endDay - 7
             elif rangeSetting=='Last 30 days':
                 startDay = endDay - 30
+            elif rangeSetting=='Custom':
+                startDay = self.cal1.selectedDate().toJulianDay()
+                endDay = self.cal2.selectedDate().toJulianDay()
             plotRangeKeys = [str(x) for x in range(startDay,endDay+1)]
         plotX = []
         plotY = []
@@ -184,7 +191,7 @@ class mainWindow(QMainWindow):
                 pass
         self.plotWidget.plot(plotX,plotY,pen=self.plotPen)
         self.plotWidget.setLabel('bottom', 'Day', **self.plotLabelStyle)
-        self.plotWidget.setLabel('left', f'{self.plotField.currentText()} ({self.items[key][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})', **self.plotLabelStyle)
+        self.plotWidget.setLabel('left', f'{self.plotField.currentText()} ({self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})', **self.plotLabelStyle)
         
     
     def _addActivity(self):

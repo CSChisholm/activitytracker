@@ -19,8 +19,9 @@ import sys
 import json
 import os
 import datetime
+import copy
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog
 from pyqtgraph import PlotWidget, plot, mkPen
 
 def getVersion():
@@ -59,6 +60,7 @@ class mainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.items = {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}
+        self.itemsLoad = copy.deepcopy(self.items)
         self.currentDirectory = defaultDirectory
         self.currentFile = ''
         self._setTitle()
@@ -154,10 +156,14 @@ class mainWindow(QMainWindow):
     
     def _addActivity(self):
         self.activityDialogue = activityDialogue(self)
+        self.activityDialogue.setWindowTitle('New Activity')
+        self.activityDialogue.setWindowModality(Qt.ApplicationModal)
         self.activityDialogue.show()
     
     def _addField(self):
         self.fieldDialogue = fieldDialogue(self)
+        self.fieldDialogue.setWindowTitle('New Field')
+        self.fieldDialogue.setWindowModality(Qt.ApplicationModal)
         self.fieldDialogue.show()
     
     def _updateFields(self):
@@ -185,29 +191,58 @@ class mainWindow(QMainWindow):
             self._setTitle()
     
     def _open(self):
-        fileName = QFileDialog.getOpenFileName(self,'',self.currentDirectory)[0]
-        if not fileName=='':
-            try:
-                self.items = loadFile(fileName)
-                self._displayItems()
-                self._displayFields()
-                self.currentFile = fileName
-                self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
-                self._setTitle()
-            except Exception:
-                pass
+        if self.itemsLoad!=self.items:
+            self._unsavedChanges()
+        else:
+            self.saveFirst = False
+            self.openOK = True
+        if self.saveFirst:
+            if not self.currentFile=='':
+                self._save()
+            else:
+                self._saveAs()
+        if self.openOK:
+            fileName = QFileDialog.getOpenFileName(self,'',self.currentDirectory)[0]
+            if not fileName=='':
+                try:
+                    self.items = loadFile(fileName)
+                    self.itemsLoad = copy.deepcopy(self.items)
+                    self._displayItems()
+                    self._displayFields()
+                    self.currentFile = fileName
+                    self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
+                    self._setTitle()
+                except Exception:
+                    pass
     
     def _helpPopUp(self):
         self.hWindow = helpWindow()
         self.hWindow.setWindowTitle(f'Activity Logger {VERSION_STRING} - Information')
         self.hWindow.show()
     
+    def _unsavedChanges(self):
+        self.wWindow = warningWindow(self)
+        self.wWindow.setWindowTitle('Unsaved Changes')
+        self.wWindow.setWindowModality(Qt.ApplicationModal)
+        self.wWindow.exec_()
+    
     def _setTitle(self):
         self.setWindowTitle(f'Activity Logger {VERSION_STRING} - {self.currentDirectory}')
     
     def closeEvent(self, event):
-        QApplication.closeAllWindows()
-        event.accept()
+        self.saveFirst = False
+        self.openOK = True
+        if self.itemsLoad!=self.items:
+            event.ignore()
+            self._unsavedChanges()
+        if self.saveFirst:
+            if not self.currentFile=='':
+                self._save()
+            else:
+                self._saveAs()
+        if self.openOK:
+            QApplication.closeAllWindows()
+            event.accept()
 
 class helpWindow(QWidget):
     '''General information called by Help menu'''
@@ -229,7 +264,42 @@ class helpWindow(QWidget):
             lines = f.readlines()
         return lines
 
-class activityDialogue(QWidget):
+class warningWindow(QDialog):
+    '''Project change warning dialogue'''
+    def __init__(self,parent):
+        super().__init__()
+        self.parent = parent
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel('Warning, project has been modified. Save changes?'))
+        buttonsLayout = QHBoxLayout()
+        self.acceptButton = QPushButton('Yes')
+        self.noButton = QPushButton('No')
+        self.cancelButton = QPushButton('Cancel')
+        buttonsLayout.addWidget(self.acceptButton)
+        buttonsLayout.addWidget(self.noButton)
+        buttonsLayout.addWidget(self.cancelButton)
+        layout.addLayout(buttonsLayout)
+        self.setLayout(layout)
+        self.noButton.clicked.connect(self._noClick)
+        self.cancelButton.clicked.connect(self._cancelClick)
+        self.acceptButton.clicked.connect(self._acceptClick)
+    
+    def _acceptClick(self):
+        self.parent.openOK = True
+        self.parent.saveFirst = True
+        self.close()
+    
+    def _noClick(self):
+        self.parent.openOK = True
+        self.parent.saveFirst = False
+        self.close()
+    
+    def _cancelClick(self):
+        self.parent.openOK = False
+        self.parent.saveFirst = False
+        self.close()
+
+class activityDialogue(QDialog):
     '''Add new Activity type'''
     def __init__(self,parent):
         super().__init__()
@@ -259,7 +329,7 @@ class activityDialogue(QWidget):
             self.parent._displayItems()
             self.close()
 
-class fieldDialogue(QWidget):
+class fieldDialogue(QDialog):
     '''Add fields to activity'''
     def __init__(self,parent):
         super().__init__()

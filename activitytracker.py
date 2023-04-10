@@ -21,7 +21,7 @@ import os
 import datetime
 import copy
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QCalendarWidget
 from pyqtgraph import PlotWidget, plot, mkPen
 
 def getVersion():
@@ -33,8 +33,8 @@ def getVersion():
 VERSION_STRING = getVersion()
 
 #Set geometry
-ITEMS_HEIGHT = 500
-ITEMS_WIDTH = 150
+ITEMS_HEIGHT = 450
+ITEMS_WIDTH = 300
 FIELDS_WIDTH = 300
 PLOT_WIDTH = 600
 
@@ -59,8 +59,6 @@ class mainWindow(QMainWindow):
     '''Main window'''
     def __init__(self):
         super().__init__()
-        self.items = {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}
-        self.itemsLoad = copy.deepcopy(self.items)
         self.currentDirectory = defaultDirectory
         self.currentFile = ''
         self._setTitle()
@@ -87,6 +85,9 @@ class mainWindow(QMainWindow):
     
     def _createItemsBox(self):
         itemsLayout = QVBoxLayout()
+        self.cal0 = QCalendarWidget()
+        itemsLayout.addWidget(self.cal0)
+        self.currentDay = str(self.cal0.selectedDate().toJulianDay())
         itemsLayout.addWidget(QLabel('Activities'))
         self.itemsBox = QListWidget()
         self.itemsBox.setFixedHeight(ITEMS_HEIGHT)
@@ -95,6 +96,7 @@ class mainWindow(QMainWindow):
         self.activityButton = QPushButton('Add activity')
         itemsLayout.addWidget(self.activityButton)
         self.generalLayout.addLayout(itemsLayout)
+        self._new()
     
     def _createFieldsBox(self):
         fieldsLayout = QVBoxLayout()
@@ -140,7 +142,7 @@ class mainWindow(QMainWindow):
     
     def _displayItems(self):
         self.itemsBox.clear()
-        for key in self.items.keys():
+        for key in self.items[self.currentDay].keys():
             self.itemsBox.addItem(key)
         self.itemsBox.setCurrentRow(0)
     
@@ -149,12 +151,12 @@ class mainWindow(QMainWindow):
         self.fieldForm = QGridLayout(fieldFormScrollContents)
         currentItem = self.itemsBox.currentItem()
         if currentItem is not None:
-            self.editBoxes = {key: QLineEdit() for key in self.items[currentItem.text()].keys()}
-            for row, key in enumerate(self.items[currentItem.text()].keys()):
-                self.editBoxes[key].setText(str(self.items[currentItem.text()][key]['value']))
+            self.editBoxes = {key: QLineEdit() for key in self.items[self.currentDay][currentItem.text()].keys()}
+            for row, key in enumerate(self.items[self.currentDay][currentItem.text()].keys()):
+                self.editBoxes[key].setText(str(self.items[self.currentDay][currentItem.text()][key]['value']))
                 self.fieldForm.addWidget(QLabel(key),row,0)
                 self.fieldForm.addWidget(self.editBoxes[key],row,1)
-                self.fieldForm.addWidget(QLabel(self.items[currentItem.text()][key]['unit']),row,2)
+                self.fieldForm.addWidget(QLabel(self.items[self.currentDay][currentItem.text()][key]['unit']),row,2)
         self.fieldFormScroll.setWidget(fieldFormScrollContents)
         self.plotField.clear()
         self.plotField.addItems(list(self.editBoxes.keys()))
@@ -174,18 +176,25 @@ class mainWindow(QMainWindow):
     def _updateFields(self):
         currentItem = self.itemsBox.currentItem().text()
         for key in self.editBoxes.keys():
-            self.items[currentItem][key]['value'] = float(self.editBoxes[key].text())
+            self.items[self.currentDay][currentItem][key]['value'] = float(self.editBoxes[key].text())
     
     def _new(self):
-        self.items = {}
-        self._displayItems()
-        self._displayFields()
+        self.items = {self.currentDay: {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}}
+        # self.items = {self.currentDay: {}}
+        self.itemsLoad = copy.deepcopy(self.items)
+        try:
+            self._displayItems()
+            self._displayFields()
+        except AttributeError: #Still initialising
+            pass
     
     def _save(self):
         if not self.currentFile=='':
             saveFile(self.currentFile,self.items)
         else:
             saveFile(f'{self.currentDirectory}activitytracker_{datetime.datetime.now().strftime("%Y-%m-%d_%I:%M%p")}.json',self.items)
+        self.itemsLoad = copy.deepcopy(self.items)
+        
     
     def _saveAs(self):
         fileName = QFileDialog.getSaveFileName(self,'',self.currentDirectory)[0]
@@ -194,6 +203,7 @@ class mainWindow(QMainWindow):
             self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
             saveFile(fileName,self.items)
             self._setTitle()
+            self.itemsLoad = copy.deepcopy(self.items)
     
     def _open(self):
         if self.itemsLoad!=self.items:
@@ -327,10 +337,10 @@ class activityDialogue(QDialog):
     
     def _accept(self):
         qText = self.textBox.text()
-        if (qText in self.parent.items.keys() or not len(qText)):
+        if (qText in self.parent.items[self.currentDay].keys() or not len(qText)):
             return
         else:
-            self.parent.items.update({qText: {}})
+            self.parent.items[self.currentDay].update({qText: {}})
             self.parent._displayItems()
             self.close()
 
@@ -366,9 +376,9 @@ class fieldDialogue(QDialog):
         valueText = self.valueBox.text()
         unitText = self.unitBox.text()
         itemKey = self.parent.itemsBox.currentItem().text()
-        if not labelText in self.parent.items[itemKey].keys():
+        if not labelText in self.parent.items[self.currentDay][itemKey].keys():
             try:
-                self.parent.items[itemKey].update(itemField(labelText,float(valueText),unitText))
+                self.parent.items[self.currentDay][itemKey].update(itemField(labelText,float(valueText),unitText))
                 self.parent._displayFields()
             except Exception:
                 pass

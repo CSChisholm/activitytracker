@@ -120,7 +120,8 @@ class mainWindow(QMainWindow):
         plotLayout.addWidget(self.PlotTitle)
         self.plotWidget = PlotWidget()
         self.plotWidget.setBackground('w')
-        self.plotpen = mkPen(color=(0,0,0),width=3)
+        self.plotPen = mkPen(color=(0,0,0),width=3)
+        self.plotLabelStyle = {'color': '#000', 'font-size': '20px'}
         self.plotWidget.setFixedHeight(ITEMS_HEIGHT)
         self.plotWidget.setFixedWidth(PLOT_WIDTH)
         plotControlWidget = QHBoxLayout()
@@ -160,6 +161,31 @@ class mainWindow(QMainWindow):
         self.fieldFormScroll.setWidget(fieldFormScrollContents)
         self.plotField.clear()
         self.plotField.addItems(list(self.editBoxes.keys()))
+    
+    def _generatePlot(self):
+        self.plotWidget.clear()
+        rangeSetting = self.plotRange.currentText()
+        if rangeSetting=='All time':
+            plotRangeKeys = sorted(list(self.items.keys()))
+        else:
+            endDay = QDate.currentDate().toJulianDay()
+            if rangeSetting=='Last 7 days':
+                startDay = endDay - 7
+            elif rangeSetting=='Last 30 days':
+                startDay = endDay - 30
+            plotRangeKeys = [str(x) for x in range(startDay,endDay+1)]
+        plotX = []
+        plotY = []
+        for key in plotRangeKeys:
+            try:
+                plotY.append(float(self.items[key][self.itemsBox.currentItem().text()][self.plotField.currentText()]['value']))
+                plotX.append(float(key)-float(QDate.currentDate().toJulianDay()))
+            except KeyError:
+                pass
+        self.plotWidget.plot(plotX,plotY,pen=self.plotPen)
+        self.plotWidget.setLabel('bottom', 'Day', **self.plotLabelStyle)
+        self.plotWidget.setLabel('left', f'{self.plotField.currentText()} ({self.items[key][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})', **self.plotLabelStyle)
+        
     
     def _addActivity(self):
         self.activityDialogue = activityDialogue(self)
@@ -420,6 +446,7 @@ class controller:
         self._view.fieldButton.clicked.connect(self._view._addField)
         self._view.updateButton.clicked.connect(self._view._updateFields)
         self._view.cal0.selectionChanged.connect(self._view._changeDay)
+        self._view.plotButton.clicked.connect(self._view._generatePlot)
 
 def main():
     '''Main loop'''

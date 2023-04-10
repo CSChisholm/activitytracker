@@ -59,6 +59,8 @@ class mainWindow(QMainWindow):
     '''Main window'''
     def __init__(self):
         super().__init__()
+        self.items = {}
+        self.itemsLoad = {}
         self.currentDirectory = defaultDirectory
         self.currentFile = ''
         self._setTitle()
@@ -236,13 +238,24 @@ class mainWindow(QMainWindow):
         return newDay
     
     def _new(self):
-        self.items = {self.currentDay: {}}
-        self.itemsLoad = copy.deepcopy(self.items)
-        try:
-            self._displayItems()
-            self._displayFields()
-        except AttributeError: #Still initialising
-            pass
+        if self.itemsLoad!=self.items:
+            self._unsavedChanges()
+        else:
+            self.saveFirst = False
+            self.openOK = True
+        if self.saveFirst:
+            if not self.currentFile=='':
+                self._save()
+            else:
+                self._saveAs()
+        if self.openOK:
+            self.items = {self.currentDay: {}}
+            self.itemsLoad = copy.deepcopy(self.items)
+            try:
+                self._displayItems()
+                self._displayFields()
+            except AttributeError: #Still initialising
+                pass
     
     def _save(self):
         if not self.currentFile=='':

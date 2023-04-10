@@ -16,26 +16,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import sys
-from functools import partial
+import json
+import os
+import datetime
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog
 from pyqtgraph import PlotWidget, plot, mkPen
 
+#Set geometry
 ITEMS_HEIGHT = 500
 ITEMS_WIDTH = 150
 FIELDS_WIDTH = 300
 PLOT_WIDTH = 600
 
-def itemField(label,value,unit):
+#Set default directory
+defaultDirectory = f'{os.path.expanduser("~")}/Documents/'
+
+#File IO function
+def loadFile(fileName: str) -> dict:
+    with open(fileName,'r') as f:
+        items = json.loads(f.read())
+    return items
+
+def saveFile(fileName: str, items: dict):
+    with open(fileName,'w') as f:
+        f.write(json.dumps(items))
+
+def itemField(label: str, value: float, unit: str) -> dict:
     return {label: {'value': value, 'unit': unit}}
 
-items = {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}
-
+#GUI classes
 class mainWindow(QMainWindow):
     '''Main window'''
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Activity Logger')
+        self.items = {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}
+        self.currentDirectory = defaultDirectory
+        self.currentFile = ''
+        self.setWindowTitle(f'Activity Logger - {self.currentDirectory}')
         self.generalLayout = QHBoxLayout()
         centralWidget = QWidget(self)
         centralWidget.setLayout(self.generalLayout)
@@ -109,7 +127,7 @@ class mainWindow(QMainWindow):
     
     def _displayItems(self):
         self.itemsBox.clear()
-        for key in items.keys():
+        for key in self.items.keys():
             self.itemsBox.addItem(key)
         self.itemsBox.setCurrentRow(0)
     
@@ -118,12 +136,12 @@ class mainWindow(QMainWindow):
         self.fieldForm = QGridLayout(fieldFormScrollContents)
         currentItem = self.itemsBox.currentItem()
         if currentItem is not None:
-            self.editBoxes = {key: QLineEdit() for key in items[currentItem.text()].keys()}
-            for row, key in enumerate(items[currentItem.text()].keys()):
-                self.editBoxes[key].setText(str(items[currentItem.text()][key]['value']))
+            self.editBoxes = {key: QLineEdit() for key in self.items[currentItem.text()].keys()}
+            for row, key in enumerate(self.items[currentItem.text()].keys()):
+                self.editBoxes[key].setText(str(self.items[currentItem.text()][key]['value']))
                 self.fieldForm.addWidget(QLabel(key),row,0)
                 self.fieldForm.addWidget(self.editBoxes[key],row,1)
-                self.fieldForm.addWidget(QLabel(items[currentItem.text()][key]['unit']),row,2)
+                self.fieldForm.addWidget(QLabel(self.items[currentItem.text()][key]['unit']),row,2)
         self.fieldFormScroll.setWidget(fieldFormScrollContents)
     
     def _addActivity(self):
@@ -137,19 +155,39 @@ class mainWindow(QMainWindow):
     def _updateFields(self):
         currentItem = self.itemsBox.currentItem().text()
         for key in self.editBoxes.keys():
-            items[currentItem][key]['value'] = float(self.editBoxes[key].text())
+            self.items[currentItem][key]['value'] = float(self.editBoxes[key].text())
     
     def _new(self):
-        return
+        self.items = {}
+        self._displayItems()
+        self._displayFields()
     
     def _save(self):
-        return
+        if not self.currentFile=='':
+            saveFile(self.currentFile,self.items)
+        else:
+            saveFile(f'{self.currentDirectory}activitytracker_{datetime.datetime.now().strftime("%Y-%m-%d_%I:%M%p")}.json',self.items)
     
     def _saveAs(self):
-        return
+        fileName = QFileDialog.getSaveFileName(self,'',self.currentDirectory)[0]
+        if not fileName=='':
+            self.currentFile = fileName
+            self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
+            saveFile(fileName,self.items)
+            self.setWindowTitle(f'Activity Logger - {self.currentDirectory}')
     
     def _open(self):
-        return
+        fileName = QFileDialog.getOpenFileName(self,'',self.currentDirectory)[0]
+        if not fileName=='':
+            try:
+                self.items = loadFile(fileName)
+                self._displayItems()
+                self._displayFields()
+                self.currentFile = fileName
+                self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
+                self.setWindowTitle(f'Activity Logger - {self.currentDirectory}')
+            except Exception:
+                pass
     
     def _helpPopUp(self):
         self.hWindow = helpWindow()
@@ -202,10 +240,10 @@ class activityDialogue(QWidget):
     
     def _accept(self):
         qText = self.textBox.text()
-        if (qText in items.keys() or not len(qText)):
+        if (qText in self.parent.items.keys() or not len(qText)):
             return
         else:
-            items.update({qText: {}})
+            self.parent.items.update({qText: {}})
             self.parent._displayItems()
             self.close()
 
@@ -241,9 +279,9 @@ class fieldDialogue(QWidget):
         valueText = self.valueBox.text()
         unitText = self.unitBox.text()
         itemKey = self.parent.itemsBox.currentItem().text()
-        if not labelText in items[itemKey].keys():
+        if not labelText in self.parent.items[itemKey].keys():
             try:
-                items[itemKey].update(itemField(labelText,float(valueText),unitText))
+                self.parent.items[itemKey].update(itemField(labelText,float(valueText),unitText))
                 self.parent._displayFields()
             except Exception:
                 pass

@@ -23,6 +23,14 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog
 from pyqtgraph import PlotWidget, plot, mkPen
 
+def getVersion():
+    with open('helptext.txt','r') as f:
+        lines = f.readlines()
+    for line in lines:
+        if 'Version - ' in line:
+            return line.split('Version - ')[-1].strip('\n')
+VERSION_STRING = getVersion()
+
 #Set geometry
 ITEMS_HEIGHT = 500
 ITEMS_WIDTH = 150
@@ -53,7 +61,7 @@ class mainWindow(QMainWindow):
         self.items = {'test1': {**itemField('testObject1',373,'potatoes'), **itemField('testObject2',413,'kg')}, 'test2': itemField('testObject1',118,'potatoes')}
         self.currentDirectory = defaultDirectory
         self.currentFile = ''
-        self.setWindowTitle(f'Activity Logger - {self.currentDirectory}')
+        self._setTitle()
         self.generalLayout = QHBoxLayout()
         centralWidget = QWidget(self)
         centralWidget.setLayout(self.generalLayout)
@@ -67,13 +75,13 @@ class mainWindow(QMainWindow):
     
     def _createMenu(self):
         menu = self.menuBar().addMenu('&Menu')
-        menu.addAction('&New', self._new)
-        menu.addAction('&Open', self._open)
-        menu.addAction('&Save', self._save)
-        menu.addAction('&Save As', self._saveAs)
-        menu.addAction('&Exit', self.close)
+        menu.addAction('&New', self._new, shortcut='Ctrl+N')
+        menu.addAction('&Open', self._open, shortcut='Ctrl+O')
+        menu.addAction('&Save', self._save, shortcut='Ctrl+S')
+        menu.addAction('&Save As', self._saveAs,shortcut='Ctrl+Shift+S')
+        menu.addAction('&Exit', self.close, shortcut='Alt+F4')
         helpMenu = self.menuBar().addMenu('&Help')
-        helpMenu.addAction('&Information', self._helpPopUp)
+        helpMenu.addAction('&Information', self._helpPopUp, shortcut='Ctrl+H')
     
     def _createItemsBox(self):
         itemsLayout = QVBoxLayout()
@@ -112,7 +120,7 @@ class mainWindow(QMainWindow):
         self.plotWidget.setFixedHeight(ITEMS_HEIGHT)
         self.plotWidget.setFixedWidth(PLOT_WIDTH)
         plotControlWidget = QHBoxLayout()
-        plotControlWidget.addWidget(QLabel('PlotRange:'))
+        plotControlWidget.addWidget(QLabel('Plot Range:'))
         self.plotRange = QComboBox()
         plotControlWidget.addWidget(self.plotRange)
         self.plotRange.addItems(['Last 7 days', 'Last 30 days', 'All time'])
@@ -174,7 +182,7 @@ class mainWindow(QMainWindow):
             self.currentFile = fileName
             self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
             saveFile(fileName,self.items)
-            self.setWindowTitle(f'Activity Logger - {self.currentDirectory}')
+            self._setTitle()
     
     def _open(self):
         fileName = QFileDialog.getOpenFileName(self,'',self.currentDirectory)[0]
@@ -185,13 +193,17 @@ class mainWindow(QMainWindow):
                 self._displayFields()
                 self.currentFile = fileName
                 self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
-                self.setWindowTitle(f'Activity Logger - {self.currentDirectory}')
+                self._setTitle()
             except Exception:
                 pass
     
     def _helpPopUp(self):
         self.hWindow = helpWindow()
+        self.hWindow.setWindowTitle(f'Activity Logger {VERSION_STRING} - Information')
         self.hWindow.show()
+    
+    def _setTitle(self):
+        self.setWindowTitle(f'Activity Logger {VERSION_STRING} - {self.currentDirectory}')
     
     def closeEvent(self, event):
         QApplication.closeAllWindows()

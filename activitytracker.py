@@ -20,6 +20,7 @@ import json
 import os
 import datetime
 import copy
+import numpy as np
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QCalendarWidget
 from pyqtgraph import PlotWidget, exporters, mkPen
@@ -90,7 +91,6 @@ class mainWindow(QMainWindow):
         self.cal0 = QCalendarWidget()
         itemsLayout.addWidget(self.cal0)
         self.currentDay = str(self.cal0.selectedDate().toJulianDay())
-        itemsLayout.addWidget(QLabel('Activities'))
         self.itemsBox = QListWidget()
         self.itemsBox.setFixedHeight(ITEMS_HEIGHT)
         self.itemsBox.setFixedWidth(ITEMS_WIDTH)
@@ -102,6 +102,16 @@ class mainWindow(QMainWindow):
     
     def _createFieldsBox(self):
         fieldsLayout = QVBoxLayout()
+        self.meanVal = QLabel('')
+        self.maxVal = QLabel('')
+        self.minVal = QLabel('')
+        self.medianVal = QLabel('')
+        self.stdVal = QLabel('')
+        fieldsLayout.addWidget(self.meanVal)
+        fieldsLayout.addWidget(self.maxVal)
+        fieldsLayout.addWidget(self.minVal)
+        fieldsLayout.addWidget(self.medianVal)
+        fieldsLayout.addWidget(self.stdVal)
         self.fieldFormScroll = QScrollArea(self)
         self.fieldFormScroll.setFixedHeight(ITEMS_HEIGHT)
         self.fieldFormScroll.setFixedWidth(FIELDS_WIDTH)
@@ -195,6 +205,11 @@ class mainWindow(QMainWindow):
         self.plotWidget.plot(plotX,plotY,pen=self.plotPen)
         self.plotWidget.setLabel('bottom', 'Day', **self.plotLabelStyle)
         self.plotWidget.setLabel('left', f'{self.plotField.currentText()} ({self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})', **self.plotLabelStyle)
+        self.meanVal.setText(f'Mean: {np.mean(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+        self.maxVal.setText(f'Max: {max(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+        self.minVal.setText(f'Min: {min(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+        self.medianVal.setText(f'Median: {np.median(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+        self.stdVal.setText(f'Standard deviation: {np.std(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
     
     def _exportPlot(self):
         imName = QFileDialog.getSaveFileName(self,'',self.currentDirectory)[0]

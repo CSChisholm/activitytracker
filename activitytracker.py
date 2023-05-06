@@ -23,7 +23,8 @@ import copy
 import numpy as np
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QCalendarWidget
-from pyqtgraph import PlotWidget, exporters, mkPen
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
 
 def getVersion():
     with open('helptext.txt','r') as f:
@@ -135,10 +136,8 @@ class mainWindow(QMainWindow):
         calLayout.addWidget(self.cal1)
         calLayout.addWidget(self.cal2)
         plotLayout.addLayout(calLayout)
-        self.plotWidget = PlotWidget()
-        self.plotWidget.setBackground('w')
-        self.plotPen = mkPen(color=(0,0,0),width=3)
-        self.plotLabelStyle = {'color': '#000', 'font-size': '20px'}
+        self.figure = plt.figure()
+        self.plotWidget = FigureCanvas(self.figure)
         self.plotWidget.setFixedHeight(ITEMS_HEIGHT)
         self.plotWidget.setFixedWidth(PLOT_WIDTH)
         plotControlWidget = QHBoxLayout()
@@ -180,7 +179,7 @@ class mainWindow(QMainWindow):
         self.plotField.addItems(list(self.editBoxes.keys()))
     
     def _generatePlot(self):
-        self.plotWidget.clear()
+        self.figure.clear()
         rangeSetting = self.plotRange.currentText()
         if rangeSetting=='All time':
             plotRangeKeys = sorted(list(self.items.keys()))
@@ -202,9 +201,11 @@ class mainWindow(QMainWindow):
                 plotX.append(float(key)-float(QDate.currentDate().toJulianDay()))
             except KeyError:
                 pass
-        self.plotWidget.plot(plotX,plotY,pen=self.plotPen)
-        self.plotWidget.setLabel('bottom', 'Day', **self.plotLabelStyle)
-        self.plotWidget.setLabel('left', f'{self.plotField.currentText()} ({self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})', **self.plotLabelStyle)
+        ax = self.figure.add_subplot(111)
+        ax.bar(plotX,plotY)
+        ax.set_xlabel('Day')
+        ax.set_ylabel(f'{self.plotField.currentText()} ({self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})')
+        self.plotWidget.draw()
         self.meanVal.setText(f'Mean: {np.mean(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
         self.maxVal.setText(f'Max: {max(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
         self.minVal.setText(f'Min: {min(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
@@ -215,8 +216,7 @@ class mainWindow(QMainWindow):
         imName = QFileDialog.getSaveFileName(self,'',self.currentDirectory)[0]
         if imName[-4:]!='.png':
             imName+='.png'
-        exporter = exporters.ImageExporter(self.plotWidget.scene())
-        exporter.export(imName)
+        plt.savefig(imName)
     
     def _addActivity(self):
         self.activityDialogue = activityDialogue(self)

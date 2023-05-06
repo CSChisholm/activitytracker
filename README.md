@@ -9,6 +9,8 @@ Data is saved as text in `.json` format.
 
 # Usage
 
+First activate virtual environment (see [Development](#development)).
+
 From command line: `python3 activitytracker.py`
 
 The user will be presented with a blank interface, to get start added an item by clicking `Add item`, the item name can be any nonempty string. The fields for each item are shown by clicking on the item name. Each item can contain a number of fields which are created by clicking `Add field`. Fields have three components, the name which can be any nonempty string, the value which can be any numeric value, and the unit which can be any string (including empty). Once a field is created it cannot be deleted and the only part which can be edited is the value. To commit changes to values, click `Update fields` otherwise the changes will be reverted if the view is changed.

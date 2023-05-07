@@ -206,6 +206,7 @@ class mainWindow(QMainWindow):
         ax.set_xlabel('Day')
         ax.set_ylabel(f'{self.plotField.currentText()} ({self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})')
         self.plotWidget.draw()
+        plotY = np.array([x for x in plotY if not x==0])
         self.meanVal.setText(f'Mean: {np.mean(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
         self.maxVal.setText(f'Max: {max(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
         self.minVal.setText(f'Min: {min(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')

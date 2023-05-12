@@ -38,7 +38,7 @@ VERSION_STRING = getVersion()
 ITEMS_HEIGHT = 450
 ITEMS_WIDTH = 300
 FIELDS_WIDTH = 300
-PLOT_WIDTH = 600
+PLOT_WIDTH = 650
 
 #Set default directory
 defaultDirectory = f'{os.path.expanduser("~")}/Documents/'
@@ -108,11 +108,13 @@ class mainWindow(QMainWindow):
         self.minVal = QLabel('')
         self.medianVal = QLabel('')
         self.stdVal = QLabel('')
+        self.totVal = QLabel('')
         fieldsLayout.addWidget(self.meanVal)
         fieldsLayout.addWidget(self.maxVal)
         fieldsLayout.addWidget(self.minVal)
         fieldsLayout.addWidget(self.medianVal)
         fieldsLayout.addWidget(self.stdVal)
+        fieldsLayout.addWidget(self.totVal)
         self.fieldFormScroll = QScrollArea(self)
         self.fieldFormScroll.setFixedHeight(ITEMS_HEIGHT)
         self.fieldFormScroll.setFixedWidth(FIELDS_WIDTH)
@@ -148,6 +150,10 @@ class mainWindow(QMainWindow):
         plotControlWidget.addWidget(QLabel('Field:'))
         self.plotField = QComboBox()
         plotControlWidget.addWidget(self.plotField)
+        plotControlWidget.addWidget(QLabel('Plot type:'))
+        self.plotType = QComboBox()
+        plotControlWidget.addWidget(self.plotType)
+        self.plotType.addItems(['Bar','Line','Scatter'])
         self.plotButton = QPushButton('Plot')
         plotControlWidget.addWidget(self.plotButton)
         self.savePlotButton = QPushButton('Save Plot')
@@ -181,6 +187,7 @@ class mainWindow(QMainWindow):
     def _generatePlot(self):
         self.figure.clear()
         rangeSetting = self.plotRange.currentText()
+        plotMode = self.plotType.currentText()
         if rangeSetting=='All time':
             plotRangeKeys = sorted(list(self.items.keys()))
         else:
@@ -199,19 +206,34 @@ class mainWindow(QMainWindow):
             try:
                 plotY.append(float(self.items[key][self.itemsBox.currentItem().text()][self.plotField.currentText()]['value']))
                 plotX.append(float(key)-float(QDate.currentDate().toJulianDay()))
-            except KeyError:
+            except (KeyError,AttributeError):
                 pass
+        plotX = np.array(plotX)
+        plotY = np.array(plotY)
         ax = self.figure.add_subplot(111)
-        ax.bar(plotX,plotY)
+        if (plotMode=='Bar'):
+            ax.bar(plotX,plotY)
+        elif (plotMode=='Line'):
+            ax.plot(plotX[plotY>0],plotY[plotY>0],marker='o')
+        elif (plotMode=='Scatter'):
+            ax.scatter(plotX[plotY>0],plotY[plotY>0])
         ax.set_xlabel('Day')
-        ax.set_ylabel(f'{self.plotField.currentText()} ({self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})')
+        try:
+            ax.set_ylabel(f'{self.plotField.currentText()} ({self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]})')
+        except AttributeError:
+            self.figure.clear()
         self.plotWidget.draw()
         plotY = np.array([x for x in plotY if not x==0])
-        self.meanVal.setText(f'Mean: {np.mean(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
-        self.maxVal.setText(f'Max: {max(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
-        self.minVal.setText(f'Min: {min(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
-        self.medianVal.setText(f'Median: {np.median(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
-        self.stdVal.setText(f'Standard deviation: {np.std(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+        if len(plotY):
+            self.meanVal.setText(f'Mean: {np.mean(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+            self.maxVal.setText(f'Max: {max(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+            self.minVal.setText(f'Min: {min(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+            self.medianVal.setText(f'Median: {np.median(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+            self.stdVal.setText(f'Standard deviation: {np.std(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+            self.totVal.setText(f'Total: {np.sum(plotY):.1f} {self.items[self.currentDay][self.itemsBox.currentItem().text()][self.plotField.currentText()]["unit"]}')
+        else:
+            self.figure.clear()
+            self.plotWidget.draw()
     
     def _exportPlot(self):
         imName = QFileDialog.getSaveFileName(self,'',self.currentDirectory)[0]

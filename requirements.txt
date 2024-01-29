@@ -1,15 +1,19 @@
-cycler==0.11.0
-fonttools==4.47.0
-kiwisolver==1.4.4
-matplotlib==3.5.3
-numpy==1.21.6
-packaging==23.0
-Pillow==9.5.0
-pyparsing==3.0.9
-PyQt5==5.15.9
-PyQt5-Qt5==5.15.2
-PyQt5-sip==12.11.1
-pyqtgraph==0.12.4
-python-dateutil==2.8.2
-six==1.16.0
-typing_extensions==4.5.0
+Package           Version
+----------------- -------
+cycler            0.11.0
+fonttools         4.47.0
+kiwisolver        1.4.4
+matplotlib        3.5.3
+numpy             1.21.6
+packaging         23.0
+pillow            10.2.0
+pip               22.0.2
+pyparsing         3.0.9
+PyQt5             5.15.9
+PyQt5-Qt5         5.15.2
+PyQt5-sip         12.11.1
+pyqtgraph         0.12.4
+python-dateutil   2.8.2
+setuptools        59.6.0
+six               1.16.0
+typing_extensions 4.5.0
